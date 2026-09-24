@@ -8,8 +8,8 @@ export default async function handler(req, res) {
     });
   }
 
-  // Відкриття /api/telegram у браузері автоматично
-  // підключає Telegram webhook.
+  // Якщо відкриваємо /api/telegram у браузері —
+  // встановлюємо Telegram webhook.
   if (req.method === "GET") {
     try {
       const webhookUrl = `https://${req.headers.host}/api/telegram`;
@@ -18,14 +18,19 @@ export default async function handler(req, res) {
         `https://api.telegram.org/bot${token}/setWebhook`,
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ url: webhookUrl })
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            url: webhookUrl
+          })
         }
       );
 
       const result = await response.json();
 
       return res.status(200).json({
+        ok: true,
         webhook: webhookUrl,
         telegram: result
       });
@@ -38,7 +43,10 @@ export default async function handler(req, res) {
   }
 
   if (req.method !== "POST") {
-    return res.status(405).json({ error: "Method not allowed" });
+    return res.status(405).json({
+      ok: false,
+      error: "Method not allowed"
+    });
   }
 
   const message = req.body?.message;
@@ -50,19 +58,15 @@ export default async function handler(req, res) {
   }
 
   try {
-    // Передаємо повідомлення існуючому AI-асистенту.
     const aiResponse = await fetch(
       `https://${req.headers.host}/api/chat`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
-          messages: [
-            {
-              role: "user",
-              content: text
-            }
-          ]
+          message: text
         })
       }
     );
@@ -77,7 +81,9 @@ export default async function handler(req, res) {
       `https://api.telegram.org/bot${token}/sendMessage`,
       {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json"
+        },
         body: JSON.stringify({
           chat_id: chatId,
           text: reply
@@ -89,8 +95,8 @@ export default async function handler(req, res) {
   } catch (error) {
     console.error("Telegram error:", error);
 
-    // Повертаємо 200, щоб Telegram не надсилав
-    // одне й те саме повідомлення повторно.
-    return res.status(200).json({ ok: true });
+    return res.status(200).json({
+      ok: true
+    });
   }
 }
