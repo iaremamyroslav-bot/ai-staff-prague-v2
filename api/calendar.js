@@ -65,7 +65,20 @@ export default async function handler(req, res) {
       },
     };
 
-    const result = await calendar.events.insert({
+  const conflicts = await calendar.events.list({
+  calendarId,
+  timeMin: start,
+  timeMax: end,
+  maxResults: 1,
+  singleEvents: true,
+});
+
+if (conflicts.data.items?.length) {
+  return res.status(409).json({
+    ok: false,
+    error: "Time slot is already booked",
+  });
+}  const result = await calendar.events.insert({
       calendarId,
       requestBody: event,
     });
